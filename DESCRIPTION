@@ -26,3 +26,6 @@ Collate:
     'mobilityreg-package.R'
     'mobility_reg.R'
     'zzz.R'
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
