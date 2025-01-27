@@ -3,6 +3,7 @@
 
 ## usethis namespace: start
 #' @importFrom generics fit
+#' @importFrom rlang .data
 ## usethis namespace: end
 NULL
 

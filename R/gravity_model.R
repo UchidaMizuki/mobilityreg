@@ -1,12 +1,18 @@
 #' @export
 gravity_model <- function(type = c("power", "exponential"),
-                          parameters = NA_real_) {
+                          parameters = NA_real_,
+                          diagonal = TRUE) {
   type <- rlang::arg_match(type, c("power", "exponential"))
 
   probability <- function(object, data) {
+    x <- data$x
+    if (!object@diagonal) {
+      dibble::diag(x) <- 0
+    }
+
     distance_decay <- object@distance_decay(data$distance, object@parameters)
 
-    probability <- data$x * distance_decay
+    probability <- dibble::ifelse(x == 0, 0, x * distance_decay)
     probability_sum <- dibble::apply(probability, "origin", sum)
 
     dibble::broadcast(probability / probability_sum,
@@ -21,7 +27,8 @@ gravity_model <- function(type = c("power", "exponential"),
   GravityModel(probability = probability,
                n_parameters = 1L,
                parameters = parameters,
-               distance_decay = distance_decay)
+               distance_decay = distance_decay,
+               diagonal = diagonal)
 }
 
 #' @include mobility_model.R

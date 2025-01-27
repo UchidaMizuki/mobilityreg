@@ -3,7 +3,8 @@ MobilityModel <- S7::new_class(
   properties = list(
     probability = S7::class_function,
     n_parameters = S7::class_integer,
-    parameters = S7::class_numeric
+    parameters = S7::class_numeric,
+    diagonal = S7::class_logical
   ),
   validator = function(self) {
     fmls_names_probability <- rlang::fn_fmls_names(self@probability)
@@ -12,20 +13,15 @@ MobilityModel <- S7::new_class(
     }
     vctrs::vec_check_size(self@n_parameters, 1)
     vctrs::vec_check_size(self@parameters, self@n_parameters)
+    vctrs::vec_check_size(self@diagonal, 1)
   }
 )
 
 S7::method(predict, MobilityModel) <- function(object, new_data,
-                                               type = c("probability", "flow"),
                                                class = c("vector", "dibble")) {
-  type <- rlang::arg_match(type, c("probability", "flow"))
   class <- rlang::arg_match(class, c("vector", "dibble"))
 
-  data <- switch(
-    type,
-    flow = MobilityModel_flow(object, new_data),
-    probability = MobilityModel_probability(object, new_data)
-  )
+  data <- MobilityModel_probability(object, new_data)
   switch(
     class,
     vector = MobilityModel_as_vector(data, new_data),
@@ -38,7 +34,14 @@ MobilityModel_as_dibble <- function(object, data) {
     return(data)
   }
   data <- dibble::dibble_by(data, "origin", "destination")
-  tidyr::replace_na(data, list(distance = Inf, x = 0, y = 0))
+
+  dim_names <- dimnames(data)
+  location <- unique(dim_names$origin, dim_names$destination)
+  dim_names <- list(origin = location,
+                    destination = location)
+
+  data <- dibble::broadcast(data, dim_names)
+  tidyr::replace_na(data, list(distance = Inf, x = 0))
 }
 
 MobilityModel_probability <- function(object, data) {
@@ -46,16 +49,6 @@ MobilityModel_probability <- function(object, data) {
 
   object@probability(object = object,
                      data = data)
-}
-
-MobilityModel_flow <- function(object, data) {
-  data <- MobilityModel_as_dibble(object, data)
-
-  y_sum <- dibble::apply(data$y, "origin", sum)
-  probability <- MobilityModel_probability(object, data)
-
-  dibble::broadcast(y_sum * probability,
-                    dim_names = c("origin", "destination"))
 }
 
 MobilityModel_as_vector <- function(data, new_data) {

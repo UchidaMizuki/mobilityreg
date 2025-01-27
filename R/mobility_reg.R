@@ -21,11 +21,9 @@ MobilityReg <- S7::new_class(
 )
 
 S7::method(predict, MobilityReg) <- function(object, new_data,
-                                             type = c("probability", "flow"),
                                              class = c("vector", "dibble")) {
   new_data <- MobilityReg_new_data(object, new_data)
   predict(object@model, new_data,
-          type = type,
           class = class)
 }
 
@@ -43,13 +41,22 @@ S7::method(fit, MobilityReg) <- function(object, data, ...) {
   fn <- function(par) {
     object <- update_par(object, par)
     probability <- predict(object, data,
-                           type = "probability",
                            class = "vector")
-    -sum(data$y * log(probability))
+
+    if (!object@model@diagonal) {
+      y_diagonal <- dplyr::filter(data, .data$origin == .data$destination)
+      y_diagonal <- y_diagonal$y
+
+      if (!all(y_diagonal == 0)) {
+        cli::cli_abort("If {.code model@diagonal} is {.code FALSE}, the internal flow must be zero.")
+      }
+    }
+    y <- data$y
+
+    log_likelihood <- dibble::ifelse(y == 0, 0, y * log(probability))
+    -sum(log_likelihood)
   }
-  optimised <- optim(par = par,
-                     fn = fn,
-                     ...)
+  optimised <- optim(par, fn, ...)
   update_par(object, optimised$par)
 }
 
