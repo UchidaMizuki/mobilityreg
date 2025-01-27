@@ -10,7 +10,8 @@ MobilityModel <- S7::new_class(
     vctrs::vec_check_size(self@diagonal, 1)
     vctrs::vec_check_size(self@n_parameters, 1)
     vctrs::vec_check_size(self@parameters, self@n_parameters)
-    fmls_names_probability <- rlang::fn_fmls_names(self@probability)
+
+    fmls_names_probability <- c("object", "data")
     if (!setequal(rlang::fn_fmls_names(self@probability), fmls_names_probability)) {
       cli::cli_abort("{.fn probability} must have arguments {.arg {fmls_names_probability}}.")
     }

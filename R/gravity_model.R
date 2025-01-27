@@ -39,7 +39,7 @@ GravityModel <- S7::new_class(
     distance_decay = S7::class_function
   ),
   validator = function(self) {
-    fmls_names_distance_decay <- rlang::fn_fmls_names(self@distance_decay)
+    fmls_names_distance_decay <- c("distance", "parameters")
     if (!setequal(rlang::fn_fmls_names(self@distance_decay), fmls_names_distance_decay)) {
       cli::cli_abort("{.fn distance_decay} must have arguments {.arg {fmls_names_distance_decay}}.")
     }
