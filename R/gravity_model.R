@@ -1,7 +1,7 @@
 #' @export
-gravity_model <- function(type = c("power", "exponential"),
-                          parameters = NA_real_,
-                          diagonal = TRUE) {
+gravity_model <- function(diagonal,
+                          type = c("power", "exponential"),
+                          parameters = NA_real_) {
   type <- rlang::arg_match(type, c("power", "exponential"))
 
   probability <- function(object, data) {
@@ -24,11 +24,11 @@ gravity_model <- function(type = c("power", "exponential"),
     exponential = function(distance, parameters) exp(-parameters * distance)
   )
 
-  GravityModel(probability = probability,
+  GravityModel(diagonal = diagonal,
                n_parameters = 1L,
                parameters = parameters,
-               distance_decay = distance_decay,
-               diagonal = diagonal)
+               probability = probability,
+               distance_decay = distance_decay)
 }
 
 #' @include mobility_model.R

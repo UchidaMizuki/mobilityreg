@@ -1,9 +1,9 @@
 mobility_reg <- function(model, formula,
                          data = NULL,
                          coefficients = double()) {
-  mobility_reg <- MobilityReg(model = model,
+  mobility_reg <- MobilityReg(coefficients = coefficients,
                               formula = formula,
-                              coefficients = coefficients)
+                              model = model)
 
   if (!is.null(data)) {
     mobility_reg <- fit(mobility_reg, data)
@@ -14,9 +14,9 @@ mobility_reg <- function(model, formula,
 MobilityReg <- S7::new_class(
   "MobilityReg",
   properties = list(
-    model = MobilityModel,
+    coefficients = S7::class_numeric,
     formula = S7::class_formula,
-    coefficients = S7::class_numeric
+    model = MobilityModel
   )
 )
 
@@ -43,15 +43,16 @@ S7::method(fit, MobilityReg) <- function(object, data, ...) {
     probability <- predict(object, data,
                            class = "vector")
 
+    lhs <- rlang::f_lhs(object@formula)
     if (!object@model@diagonal) {
       y_diagonal <- dplyr::filter(data, .data$origin == .data$destination)
-      y_diagonal <- y_diagonal$y
+      y_diagonal <- y_diagonal[[lhs]]
 
       if (!all(y_diagonal == 0)) {
         cli::cli_abort("If {.code model@diagonal} is {.code FALSE}, the internal flow must be zero.")
       }
     }
-    y <- data$y
+    y <- data[[lhs]]
 
     log_likelihood <- dibble::ifelse(y == 0, 0, y * log(probability))
     -sum(log_likelihood)
@@ -62,6 +63,8 @@ S7::method(fit, MobilityReg) <- function(object, data, ...) {
 
 MobilityReg_new_data <- function(object, new_data) {
   formula <- object@formula
+  rlang::f_lhs(formula) <- NULL
+
   model_frame <- stats::model.frame(formula, new_data)
   model_matrix <- stats::model.matrix(formula, model_frame)
   model_offset <- stats::model.offset(model_frame) %||% 0

@@ -1,19 +1,19 @@
 MobilityModel <- S7::new_class(
   "MobilityModel",
   properties = list(
-    probability = S7::class_function,
+    diagonal = S7::class_logical,
     n_parameters = S7::class_integer,
     parameters = S7::class_numeric,
-    diagonal = S7::class_logical
+    probability = S7::class_function
   ),
   validator = function(self) {
+    vctrs::vec_check_size(self@diagonal, 1)
+    vctrs::vec_check_size(self@n_parameters, 1)
+    vctrs::vec_check_size(self@parameters, self@n_parameters)
     fmls_names_probability <- rlang::fn_fmls_names(self@probability)
     if (!setequal(rlang::fn_fmls_names(self@probability), fmls_names_probability)) {
       cli::cli_abort("{.fn probability} must have arguments {.arg {fmls_names_probability}}.")
     }
-    vctrs::vec_check_size(self@n_parameters, 1)
-    vctrs::vec_check_size(self@parameters, self@n_parameters)
-    vctrs::vec_check_size(self@diagonal, 1)
   }
 )
 
