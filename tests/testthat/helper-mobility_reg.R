@@ -1,25 +1,21 @@
-get_mobility_data <- function(diagonal,
-                              seed = 1234,
-                              location = letters[1:5]) {
+get_data_mobility_reg <- function(distance_diagonal = 0,
+                                  seed = 1234,
+                                  location = letters[1:5]) {
   set.seed(seed)
 
   data <- tidyr::expand_grid(origin = location,
                              destination = location)
-  data$distance <- runif(nrow(data))
-  data$x1 <- runif(nrow(data))
-  data$x2 <- runif(nrow(data))
-
-  if (!diagonal) {
-    data <- dplyr::filter(data, origin != destination)
-  }
+  data <- dplyr::mutate(data,
+                        distance = dplyr::if_else(.data$origin == .data$destination,
+                                                  distance_diagonal,
+                                                  runif(dplyr::n())),
+                        x1 = runif(dplyr::n()),
+                        x2 = runif(dplyr::n()))
   data
 }
 
-test_fit_mobility_reg <- function(diagonal, model, parameters, coefficients,
+test_fit_mobility_reg <- function(diagonal, data, model, parameters, coefficients,
                                   tolerance = 1e-3) {
-  data <- get_mobility_data(diagonal = diagonal)
-  model <- model(diagonal = diagonal,
-                 parameters = parameters)
   reg <- fit_mobility_reg(data = data,
                           model = model,
                           parameters = parameters,
@@ -40,7 +36,7 @@ test_fit_mobility_reg <- function(diagonal, model, parameters, coefficients,
   }
 }
 
-fit_mobility_reg <- function(data, model, parameters, coefficients,
+fit_mobility_reg <- function(model, data, parameters, coefficients,
                              formula = y ~ x1 + x2) {
   reg <- mobility_reg(model = model,
                       formula = formula,
