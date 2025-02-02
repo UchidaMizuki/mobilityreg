@@ -35,7 +35,9 @@ S7::method(fit, MobilityReg) <- function(object, data, ...) {
   par <- vctrs::vec_rep(0, n_coefficients + n_parameters)
   update_par <- function(object, par) {
     object@coefficients <- par[1:n_coefficients]
-    object@model@parameters <- par[(n_coefficients + 1):(n_coefficients + n_parameters)]
+    if (n_parameters > 0) {
+      object@model@parameters <- object@model@fun_parameters(par[(n_coefficients + 1):(n_coefficients + n_parameters)])
+    }
     object
   }
   fn <- function(par) {

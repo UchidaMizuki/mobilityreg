@@ -1,8 +1,7 @@
 #' @export
-gravity_model <- function(diagonal,
-                          type = c("power", "exponential"),
+gravity_model <- function(diagonal, type,
                           parameters = NA_real_) {
-  type <- rlang::arg_match(type, c("power", "exponential"))
+  type <- rlang::arg_match(type, c("exponential", "power"))
 
   probability <- function(object, data) {
     x <- data$x
@@ -20,11 +19,12 @@ gravity_model <- function(diagonal,
   }
   distance_decay <- switch(
     type,
-    power = function(distance, parameters) distance ^ -parameters,
-    exponential = function(distance, parameters) exp(-parameters * distance)
+    exponential = function(distance, parameters) exp(-parameters * distance),
+    power = function(distance, parameters) distance ^ -parameters
   )
 
   GravityModel(diagonal = diagonal,
+               fun_parameters = exp,
                n_parameters = 1L,
                parameters = parameters,
                probability = probability,

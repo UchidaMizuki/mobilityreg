@@ -2,6 +2,7 @@ MobilityModel <- S7::new_class(
   "MobilityModel",
   properties = list(
     diagonal = S7::class_logical,
+    fun_parameters = S7::class_function,
     n_parameters = S7::class_integer,
     parameters = S7::class_numeric,
     probability = S7::class_function
@@ -30,7 +31,7 @@ S7::method(predict, MobilityModel) <- function(object, new_data,
   )
 }
 
-MobilityModel_as_dibble <- function(object, data) {
+MobilityModel_as_dibble <- function(data) {
   if (dibble::is_dibble(data)) {
     return(data)
   }
@@ -42,11 +43,11 @@ MobilityModel_as_dibble <- function(object, data) {
                     destination = location)
 
   data <- dibble::broadcast(data, dim_names)
-  tidyr::replace_na(data, list(distance = Inf, x = 0))
+  tidyr::replace_na(data, list(distance = 0, x = 0))
 }
 
 MobilityModel_probability <- function(object, data) {
-  data <- MobilityModel_as_dibble(object, data)
+  data <- MobilityModel_as_dibble(data)
 
   object@probability(object = object,
                      data = data)

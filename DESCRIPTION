@@ -23,8 +23,10 @@ Imports:
 Collate: 
     'mobility_model.R'
     'gravity_model.R'
+    'intervening_opportunities_model.R'
     'mobilityreg-package.R'
     'mobility_reg.R'
+    'utils.R'
     'zzz.R'
 Suggests: 
     testthat (>= 3.0.0)
