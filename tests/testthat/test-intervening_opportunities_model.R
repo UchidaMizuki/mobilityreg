@@ -1,6 +1,6 @@
 test_that("intervening_opportunities_model() works", {
   coefficients <- c(0.3, 0.4)
-  tolerance <- 1e-2
+  tolerance <- 1e-3
 
   data <- get_data_mobility_reg()
 

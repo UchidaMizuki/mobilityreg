@@ -8,14 +8,13 @@ get_data_mobility_reg <- function(distance_diagonal = 0,
   data <- dplyr::mutate(data,
                         distance = dplyr::if_else(.data$origin == .data$destination,
                                                   distance_diagonal,
-                                                  runif(dplyr::n())),
-                        x1 = runif(dplyr::n()),
-                        x2 = runif(dplyr::n()))
+                                                  rlnorm(dplyr::n())),
+                        x1 = rnorm(dplyr::n()),
+                        x2 = rnorm(dplyr::n()))
   data
 }
 
-test_fit_mobility_reg <- function(diagonal, data, model, parameters, coefficients,
-                                  tolerance = 1e-3) {
+test_fit_mobility_reg <- function(diagonal, data, model, parameters, coefficients, tolerance) {
   reg <- fit_mobility_reg(data = data,
                           model = model,
                           parameters = parameters,
