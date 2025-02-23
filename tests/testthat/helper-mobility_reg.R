@@ -1,6 +1,6 @@
 get_data_mobility_reg <- function(distance_diagonal = 0,
                                   seed = 1234,
-                                  location = letters[1:5]) {
+                                  location = letters[1:10]) {
   set.seed(seed)
 
   data <- tidyr::expand_grid(origin = location,
@@ -9,20 +9,24 @@ get_data_mobility_reg <- function(distance_diagonal = 0,
                         distance = dplyr::if_else(.data$origin == .data$destination,
                                                   distance_diagonal,
                                                   rlnorm(dplyr::n())),
-                        x1 = rnorm(dplyr::n()),
-                        x2 = rnorm(dplyr::n()))
+                        x_relevance = rnorm(dplyr::n()))
   data
 }
 
-test_fit_mobility_reg <- function(diagonal, data, model, parameters, coefficients, tolerance) {
+test_fit_mobility_reg <- function(diagonal,
+                                  data,
+                                  model,
+                                  coefficients_relevance,
+                                  coefficients_deterrence,
+                                  tolerance) {
   reg <- fit_mobility_reg(data = data,
                           model = model,
-                          parameters = parameters,
-                          coefficients = coefficients)
+                          coefficients_relevance = coefficients_relevance,
+                          coefficients_deterrence = coefficients_deterrence)
 
-  expect_equal(reg@coefficients, coefficients,
+  expect_equal(reg@coefficients_relevance, coefficients_relevance,
                tolerance = tolerance)
-  expect_equal(reg@model@parameters, parameters,
+  expect_equal(reg@coefficients_deterrence, coefficients_deterrence,
                tolerance = tolerance)
 
   predicted <- predict(reg,
@@ -35,15 +39,19 @@ test_fit_mobility_reg <- function(diagonal, data, model, parameters, coefficient
   }
 }
 
-fit_mobility_reg <- function(model, data, parameters, coefficients,
-                             formula = y ~ x1 + x2) {
-  reg <- mobility_reg(model = model,
-                      formula = formula,
-                      coefficients = coefficients)
-  data$y <- predict(reg,
-                    new_data = data)
+fit_mobility_reg <- function(data,
+                             model,
+                             coefficients_relevance,
+                             coefficients_deterrence) {
+  reg <- MobilityReg(coefficients_relevance = coefficients_relevance,
+                     coefficients_deterrence = coefficients_deterrence,
+                     formula_relevance = ~ x_relevance,
+                     formula_deterrence = ~ 1,
+                     model = model)
+  data$flow <- predict(reg,
+                       new_data = data)
 
-  reg@coefficients <- vctrs::vec_init_along(reg@coefficients)
-  reg@model@parameters <- vctrs::vec_init_along(reg@model@parameters)
+  reg@coefficients_relevance <- vctrs::vec_init_along(reg@coefficients_relevance)
+  reg@coefficients_deterrence <- vctrs::vec_init_along(reg@coefficients_deterrence)
   fit(reg, data)
 }

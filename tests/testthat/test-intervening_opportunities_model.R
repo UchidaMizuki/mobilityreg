@@ -1,37 +1,32 @@
 test_that("intervening_opportunities_model() works", {
-  coefficients <- c(0.3, 0.4)
+  coefficients_relevance <- 1
+  coefficients_deterrence <- -1
   tolerance <- 1e-3
 
   data <- get_data_mobility_reg()
 
-  parameters <- 0.2
   for (diagonal in c(FALSE, TRUE)) {
+    cli::cli_inform("diagonal: {diagonal}, type: exponential")
     model <- intervening_opportunities_model(diagonal = diagonal,
-                                             type = "exponential",
-                                             parameters = parameters)
+                                             type = "exponential")
 
     test_fit_mobility_reg(diagonal = diagonal,
                           data = data,
                           model = model,
-                          parameters = parameters,
-                          coefficients = coefficients,
-                          tolerance =  tolerance)
+                          coefficients_relevance = coefficients_relevance,
+                          coefficients_deterrence = coefficients_deterrence,
+                          tolerance = tolerance)
   }
 
   for (type in c("power", "radiation")) {
-    parameters <- switch(
-      type,
-      power = 0.2,
-      radiation = double()
-    )
+    cli::cli_inform("diagonal: FALSE, type: {type}")
     model <- intervening_opportunities_model(diagonal = FALSE,
-                                             type = type,
-                                             parameters = parameters)
-    test_fit_mobility_reg(diagonal = FALSE,
+                                             type = type)
+    test_fit_mobility_reg(diagonal = diagonal,
                           data = data,
                           model = model,
-                          parameters = parameters,
-                          coefficients = coefficients,
-                          tolerance =  tolerance)
+                          coefficients_relevance = coefficients_relevance,
+                          coefficients_deterrence = coefficients_deterrence,
+                          tolerance = tolerance)
   }
 })

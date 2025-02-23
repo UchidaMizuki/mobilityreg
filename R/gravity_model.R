@@ -1,17 +1,16 @@
 #' @export
-gravity_model <- function(diagonal, type,
-                          parameters = NA_real_) {
+gravity_model <- function(diagonal, type) {
   type <- rlang::arg_match(type, c("exponential", "power"))
 
   probability <- function(object, data) {
-    x <- data$x
+    relevance <- data$relevance
     if (!object@diagonal) {
-      dibble::diag(x) <- 0
+      dibble::diag(relevance) <- 0
     }
 
-    distance_decay <- object@distance_decay(data$distance, object@parameters)
+    distance_decay <- object@distance_decay(data$distance, data$deterrence)
 
-    probability <- dibble::ifelse(x == 0, 0, x * distance_decay)
+    probability <- dibble::ifelse(relevance == 0, 0, relevance * distance_decay)
     probability_sum <- dibble::apply(probability, "origin", sum)
 
     dibble::broadcast(probability / probability_sum,
@@ -19,14 +18,11 @@ gravity_model <- function(diagonal, type,
   }
   distance_decay <- switch(
     type,
-    exponential = function(distance, parameters) exp(-parameters * distance),
-    power = function(distance, parameters) distance ^ -parameters
+    exponential = function(distance, deterrence) exp(-deterrence * distance),
+    power = function(distance, deterrence) distance ^ -deterrence
   )
 
   GravityModel(diagonal = diagonal,
-               fun_parameters = exp,
-               n_parameters = 1L,
-               parameters = parameters,
                probability = probability,
                distance_decay = distance_decay)
 }
@@ -39,7 +35,7 @@ GravityModel <- S7::new_class(
     distance_decay = S7::class_function
   ),
   validator = function(self) {
-    fmls_names_distance_decay <- c("distance", "parameters")
+    fmls_names_distance_decay <- c("distance", "deterrence")
     if (!setequal(rlang::fn_fmls_names(self@distance_decay), fmls_names_distance_decay)) {
       cli::cli_abort("{.fn distance_decay} must have arguments {.arg {fmls_names_distance_decay}}.")
     }

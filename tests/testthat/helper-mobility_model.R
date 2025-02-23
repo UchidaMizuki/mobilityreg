@@ -1,6 +1,5 @@
 get_empty_mobility_model <- function() {
   MobilityModel(diagonal = TRUE,
-                n_parameters = 0L,
                 probability = function(object, data) {})
 }
 

@@ -2,15 +2,10 @@ MobilityModel <- S7::new_class(
   "MobilityModel",
   properties = list(
     diagonal = S7::class_logical,
-    fun_parameters = S7::class_function,
-    n_parameters = S7::class_integer,
-    parameters = S7::class_numeric,
     probability = S7::class_function
   ),
   validator = function(self) {
     vctrs::vec_check_size(self@diagonal, 1)
-    vctrs::vec_check_size(self@n_parameters, 1)
-    vctrs::vec_check_size(self@parameters, self@n_parameters)
 
     fmls_names_probability <- c("object", "data")
     if (!setequal(rlang::fn_fmls_names(self@probability), fmls_names_probability)) {
@@ -56,7 +51,7 @@ MobilityModel_probability <- function(object, data) {
 MobilityModel_as_vector <- function(data, new_data) {
   data <- tibble::as_tibble(data)
 
-  new_data <- dplyr::select(new_data, "origin", "destination")
+  new_data <- new_data[c("origin", "destination")]
   new_data <- dplyr::left_join(new_data, data,
                                by = c("origin", "destination"))
   new_data$.
