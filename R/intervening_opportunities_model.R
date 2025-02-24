@@ -1,3 +1,4 @@
+#' @export
 intervening_opportunities_model <- function(diagonal, deterrence_type) {
   deterrence_type <- rlang::arg_match(deterrence_type, c("exponential", "power_law", "radiation"))
 

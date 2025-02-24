@@ -1,3 +1,4 @@
+#' @export
 exploring_opportunities_model <- function(diagonal, exploration_type, deterrence_type) {
   exploration_type <- rlang::arg_match(exploration_type, c("opportunity", "distance"))
   deterrence_type <- rlang::arg_match(deterrence_type, c("exponential", "power_law"))
