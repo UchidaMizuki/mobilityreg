@@ -15,6 +15,7 @@ Imports:
     dibble,
     dplyr,
     generics,
+    memoise,
     rlang,
     S7,
     tibble,

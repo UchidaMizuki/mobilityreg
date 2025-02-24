@@ -1,9 +1,9 @@
 #' @export
-mobility_reg <- function(model, formula_relevance, formula_deterrence, data) {
+mobility_reg <- function(model, formula_relevance, formula_deterrence, data, ...) {
   mobility_reg <- MobilityReg(model = model,
                               formula_relevance = formula_relevance,
                               formula_deterrence = formula_deterrence)
-  fit(mobility_reg, data)
+  fit(mobility_reg, data, ...)
 }
 
 MobilityReg <- S7::new_class(
