@@ -10,21 +10,21 @@ intervening_opportunities_model <- function(diagonal, deterrence_type) {
     opportunity_cumsum_lag <- apply_by_distance(opportunity_cumsum, data$distance, dplyr::lag,
                                                 default = 0)
     opportunity_cumsum_last <- apply_by_distance(opportunity_cumsum, data$distance, dplyr::last)
-    opportunity_diagonal <- dibble::diag(data$relevance,
-                                         axes = "origin")
+    opportunity_origin <- dibble::diag(data$relevance,
+                                       axes = "origin")
 
-    upper_probability <- upper_probability(opportunity_cumsum = opportunity_cumsum,
-                                           opportunity_diagonal = opportunity_diagonal,
-                                           deterrence = data$deterrence,
-                                           diagonal = object@diagonal)
-    upper_probability_lag <- upper_probability(opportunity_cumsum = opportunity_cumsum_lag,
-                                               opportunity_diagonal = opportunity_diagonal,
-                                               deterrence = data$deterrence,
-                                               diagonal = object@diagonal)
-    upper_probability_last <- upper_probability(opportunity_cumsum = opportunity_cumsum_last,
-                                                opportunity_diagonal = opportunity_diagonal,
-                                                deterrence = data$deterrence,
-                                                diagonal = object@diagonal)
+    upper_probability <- object@upper_probability(opportunity_cumsum = opportunity_cumsum,
+                                                  opportunity_origin = opportunity_origin,
+                                                  deterrence = data$deterrence,
+                                                  diagonal = object@diagonal)
+    upper_probability_lag <- object@upper_probability(opportunity_cumsum = opportunity_cumsum_lag,
+                                                      opportunity_origin = opportunity_origin,
+                                                      deterrence = data$deterrence,
+                                                      diagonal = object@diagonal)
+    upper_probability_last <- object@upper_probability(opportunity_cumsum = opportunity_cumsum_last,
+                                                       opportunity_origin = opportunity_origin,
+                                                       deterrence = data$deterrence,
+                                                       diagonal = object@diagonal)
 
     probability <- (upper_probability_lag - upper_probability) / (1 - upper_probability_last)
     if (!object@diagonal) {
@@ -34,19 +34,19 @@ intervening_opportunities_model <- function(diagonal, deterrence_type) {
   }
   upper_probability <- switch(
     deterrence_type,
-    exponential = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
+    exponential = function(opportunity_cumsum, opportunity_origin, deterrence, diagonal) {
       if (!diagonal) {
-        opportunity_cumsum <- dibble::broadcast(opportunity_cumsum - opportunity_diagonal,
+        opportunity_cumsum <- dibble::broadcast(opportunity_cumsum - opportunity_origin,
                                                 dim_names = c("origin", "destination"))
       }
       exp(-deterrence * opportunity_cumsum)
     },
-    power_law = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
-      dibble::broadcast((opportunity_diagonal / opportunity_cumsum) ^ deterrence,
+    power_law = function(opportunity_cumsum, opportunity_origin, deterrence, diagonal) {
+      dibble::broadcast((opportunity_origin / opportunity_cumsum) ^ deterrence,
                         dim_names = c("origin", "destination"))
     },
-    radiation = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
-      dibble::broadcast((opportunity_diagonal * deterrence) / (opportunity_cumsum - opportunity_diagonal * (1 - deterrence)),
+    radiation = function(opportunity_cumsum, opportunity_origin, deterrence, diagonal) {
+      dibble::broadcast((opportunity_origin * deterrence) / (opportunity_cumsum - opportunity_origin * (1 - deterrence)),
                         dim_names = c("origin", "destination"))
     }
   )
@@ -56,7 +56,7 @@ intervening_opportunities_model <- function(diagonal, deterrence_type) {
                                 upper_probability = upper_probability)
 }
 
-# @include mobility_model.R
+#' @include mobility_model.R
 InterveningOpportunitiesModel <- S7::new_class(
   "InterveningOpportunitiesModel",
   parent = MobilityModel,
@@ -64,7 +64,7 @@ InterveningOpportunitiesModel <- S7::new_class(
     upper_probability = S7::class_function
   ),
   validator = function(self) {
-    fmls_names_upper_probability <- c("opportunity_cumsum", "opportunity_diagonal", "deterrence", "diagonal")
+    fmls_names_upper_probability <- c("opportunity_cumsum", "opportunity_origin", "deterrence", "diagonal")
     if (!setequal(rlang::fn_fmls_names(self@upper_probability), fmls_names_upper_probability)) {
       cli::cli_abort("{.fn upper_probability} must have arguments {.arg {fmls_names_upper_probability}}.")
     }

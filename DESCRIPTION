@@ -22,6 +22,7 @@ Imports:
     vctrs
 Collate: 
     'mobility_model.R'
+    'exploring_opportunities_model.R'
     'gravity_model.R'
     'intervening_opportunities_model.R'
     'mobilityreg-package.R'
