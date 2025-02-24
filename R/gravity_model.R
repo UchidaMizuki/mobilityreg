@@ -1,6 +1,6 @@
 #' @export
-gravity_model <- function(diagonal, type) {
-  type <- rlang::arg_match(type, c("exponential", "power"))
+gravity_model <- function(diagonal, deterrence_type) {
+  deterrence_type <- rlang::arg_match(deterrence_type, c("exponential", "power_law"))
 
   probability <- function(object, data) {
     relevance <- data$relevance
@@ -17,9 +17,9 @@ gravity_model <- function(diagonal, type) {
                       dim_names = c("origin", "destination"))
   }
   distance_decay <- switch(
-    type,
+    deterrence_type,
     exponential = function(distance, deterrence) exp(-deterrence * distance),
-    power = function(distance, deterrence) distance ^ -deterrence
+    power_law = function(distance, deterrence) distance ^ -deterrence
   )
 
   GravityModel(diagonal = diagonal,

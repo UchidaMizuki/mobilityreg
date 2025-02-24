@@ -6,10 +6,10 @@ test_that("gravity_model() works", {
   data <- get_data_mobility_reg(distance_diagonal = 1e-2)
 
   for (diagonal in c(FALSE, TRUE)) {
-    for (type in c("exponential", "power")) {
-      cli::cli_inform("diagonal: {diagonal}, type: {type}")
+    for (deterrence_type in c("exponential", "power_law")) {
+      cli::cli_inform("diagonal: {diagonal}, deterrence_type: {deterrence_type}")
       model <- gravity_model(diagonal = diagonal,
-                             type = type)
+                             deterrence_type = deterrence_type)
       test_fit_mobility_reg(diagonal = diagonal,
                             data = data,
                             model = model,

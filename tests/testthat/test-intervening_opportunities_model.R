@@ -6,9 +6,9 @@ test_that("intervening_opportunities_model() works", {
   data <- get_data_mobility_reg()
 
   for (diagonal in c(FALSE, TRUE)) {
-    cli::cli_inform("diagonal: {diagonal}, type: exponential")
+    cli::cli_inform("diagonal: {diagonal}, deterrence_type: exponential")
     model <- intervening_opportunities_model(diagonal = diagonal,
-                                             type = "exponential")
+                                             deterrence_type = "exponential")
 
     test_fit_mobility_reg(diagonal = diagonal,
                           data = data,
@@ -18,10 +18,10 @@ test_that("intervening_opportunities_model() works", {
                           tolerance = tolerance)
   }
 
-  for (type in c("power", "radiation")) {
-    cli::cli_inform("diagonal: FALSE, type: {type}")
+  for (deterrence_type in c("power_law", "radiation")) {
+    cli::cli_inform("diagonal: FALSE, deterrence_type: {deterrence_type}")
     model <- intervening_opportunities_model(diagonal = FALSE,
-                                             type = type)
+                                             deterrence_type = deterrence_type)
     test_fit_mobility_reg(diagonal = diagonal,
                           data = data,
                           model = model,

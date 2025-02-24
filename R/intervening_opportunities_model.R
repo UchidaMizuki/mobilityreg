@@ -1,8 +1,8 @@
-intervening_opportunities_model <- function(diagonal, type) {
-  type <- rlang::arg_match(type, c("exponential", "power", "radiation"))
+intervening_opportunities_model <- function(diagonal, deterrence_type) {
+  deterrence_type <- rlang::arg_match(deterrence_type, c("exponential", "power_law", "radiation"))
 
-  if (type %in% c("power", "radiation") && diagonal) {
-    cli::cli_abort('If {.arg type} is {.code "power"} or {.code "radiation"}, {.arg diagonal} must be {.code FALSE}.')
+  if (deterrence_type %in% c("power_law", "radiation") && diagonal) {
+    cli::cli_abort('If {.arg deterrence_type} is {.code "power_law"} or {.code "radiation"}, {.arg diagonal} must be {.code FALSE}.')
   }
 
   probability <- function(object, data) {
@@ -33,7 +33,7 @@ intervening_opportunities_model <- function(diagonal, type) {
     probability
   }
   upper_probability <- switch(
-    type,
+    deterrence_type,
     exponential = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
       if (!diagonal) {
         opportunity_cumsum <- dibble::broadcast(opportunity_cumsum - opportunity_diagonal,
@@ -41,7 +41,7 @@ intervening_opportunities_model <- function(diagonal, type) {
       }
       exp(-deterrence * opportunity_cumsum)
     },
-    power = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
+    power_law = function(opportunity_cumsum, opportunity_diagonal, deterrence, diagonal) {
       dibble::broadcast((opportunity_diagonal / opportunity_cumsum) ^ deterrence,
                         dim_names = c("origin", "destination"))
     },
