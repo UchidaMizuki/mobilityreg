@@ -2,7 +2,9 @@
 
 export(exploring_opportunities_model)
 export(gravity_model)
+export(gravity_model_2)
 export(intervening_opportunities_model)
 export(mobility_reg)
+export(mobility_reg_2)
 importFrom(generics,fit)
 importFrom(rlang,.data)
