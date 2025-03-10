@@ -13,7 +13,8 @@ MobilityReg <- S7::new_class(
     coefficients_deterrence = S7::class_numeric,
     formula_relevance = S7::class_formula,
     formula_deterrence = S7::class_formula,
-    model = MobilityModel
+    model = MobilityModel,
+    optimised = S7::class_list
   )
 )
 
@@ -25,21 +26,23 @@ S7::method(predict, MobilityReg) <- function(object, new_data,
 }
 
 #' @include mobilityreg-package.R
-S7::method(fit, MobilityReg) <- function(object, data, ...) {
+S7::method(fit, MobilityReg) <- function(object, data,
+                                         parameters_init = NULL,
+                                         ...) {
   # Ignore the intercept of the relevance model
   n_coefficients_relevance <- MobilityReg_n_coefficients(object@formula_relevance, data) - 1
   n_coefficients_deterrence <- MobilityReg_n_coefficients(object@formula_deterrence, data)
 
-  par <- vctrs::vec_rep(0, n_coefficients_relevance + n_coefficients_deterrence)
-  update_par <- function(object, par) {
-    par <- vctrs::vec_chop(par,
-                           sizes = c(n_coefficients_relevance, n_coefficients_deterrence))
-    object@coefficients_relevance <- par[[1]]
-    object@coefficients_deterrence <- par[[2]]
+  parameters <- vctrs::vec_recycle(parameters_init %||% 0, n_coefficients_relevance + n_coefficients_deterrence)
+  update_parameters <- function(object, parameters) {
+    parameters <- vctrs::vec_chop(parameters,
+                                  sizes = c(n_coefficients_relevance, n_coefficients_deterrence))
+    object@coefficients_relevance <- parameters[[1]]
+    object@coefficients_deterrence <- parameters[[2]]
     object
   }
-  fn <- function(par) {
-    object <- update_par(object, par)
+  fn <- function(parameters) {
+    object <- update_parameters(object, parameters)
     probability <- predict(object, data,
                            class = "vector")
 
@@ -56,8 +59,10 @@ S7::method(fit, MobilityReg) <- function(object, data, ...) {
     log_likelihood <- dibble::ifelse(flow == 0, 0, flow * log(probability))
     -sum(log_likelihood)
   }
-  optimised <- optim(par, fn, ...)
-  update_par(object, optimised$par)
+  optimised <- optim(parameters, fn, ...)
+
+  object@optimised <- optimised
+  update_parameters(object, optimised$par)
 }
 
 MobilityReg_new_data <- function(object, new_data) {
