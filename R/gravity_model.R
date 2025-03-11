@@ -3,18 +3,20 @@ gravity_model <- function(diagonal, deterrence_type) {
   deterrence_type <- rlang::arg_match(deterrence_type, c("exponential", "power_law"))
 
   probability <- function(object, data) {
-    relevance <- data$relevance
-    if (!object@diagonal) {
-      dibble::diag(relevance) <- 0
-    }
+    purrr::map(
+      data,
+      \(data) {
+        relevance <- data$relevance
+        if (!object@diagonal) {
+          relevance[[1]] <- 0
+        }
 
-    distance_decay <- object@distance_decay(data$distance, data$deterrence)
+        distance_decay <- object@distance_decay(data$distance, data$deterrence)
 
-    probability <- dibble::ifelse(relevance == 0, 0, relevance * distance_decay)
-    probability_sum <- dibble::apply(probability, "origin", sum)
-
-    dibble::broadcast(probability / probability_sum,
-                      dim_names = c("origin", "destination"))
+        probability <- ifelse(relevance == 0, 0, relevance * distance_decay)
+        probability / sum(probability)
+      }
+    )
   }
   distance_decay <- switch(
     deterrence_type,

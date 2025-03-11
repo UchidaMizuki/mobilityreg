@@ -19,10 +19,12 @@ MobilityReg <- S7::new_class(
 )
 
 S7::method(predict, MobilityReg) <- function(object, new_data,
-                                             class = c("vector", "dibble")) {
+                                             class = c("vector", "list"),
+                                             ...) {
   new_data <- MobilityReg_new_data(object, new_data)
-  predict(object@model, new_data,
-          class = class)
+  predict(object@model, new_data$data,
+          class = class,
+          ...)
 }
 
 #' @include mobilityreg-package.R
@@ -43,20 +45,17 @@ S7::method(fit, MobilityReg) <- function(object, data,
   }
   fn <- function(parameters) {
     object <- update_parameters(object, parameters)
-    probability <- predict(object, data,
-                           class = "vector")
 
-    if (!object@model@diagonal) {
-      flow_diagonal <- dplyr::filter(data, .data$origin == .data$destination)
-      flow_diagonal <- flow_diagonal$flow
+    new_data <- MobilityReg_new_data(object, data)
+    probability <- predict(object@model, new_data$data,
+                           class = "list")
 
-      if (!all(flow_diagonal == 0)) {
-        cli::cli_abort("If {.code model@diagonal} is {.code FALSE}, the internal flow must be zero.")
-      }
-    }
-    flow <- data$flow
+    probability <- vctrs::list_unchop(probability)
 
-    log_likelihood <- dibble::ifelse(flow == 0, 0, flow * log(probability))
+    new_data <- vctrs::list_unchop(new_data$data)
+    flow <- vctrs::vec_slice(data$flow, new_data$id)
+
+    log_likelihood <- ifelse(flow == 0, 0, flow * log(probability))
     -sum(log_likelihood)
   }
   optimised <- optim(parameters, fn, ...)
@@ -87,7 +86,13 @@ MobilityReg_new_data <- function(object, new_data) {
   new_data <- new_data[c("origin", "destination", "distance")]
   new_data$relevance <- relevance
   new_data$deterrence <- deterrence
-  new_data
+
+  new_data <- tibble::rowid_to_column(new_data, "id")
+  new_data <- dplyr::arrange(new_data,
+                             dplyr::desc(.data$origin == .data$destination),
+                             .data$distance)
+  tidyr::nest(new_data,
+              .by = "origin")
 }
 
 MobilityReg_n_coefficients <- function(formula, data) {

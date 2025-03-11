@@ -5,20 +5,28 @@ exploring_opportunities_model <- function(diagonal, exploration_type, deterrence
 
   if (exploration_type == "opportunity") {
     probability <- function(object, data) {
-      opportunity_exploration <- apply_by_distance(data$relevance, data$distance, dplyr::lag,
-                                                   default = 0)
-      ExploringOpportunitiesModel_probability(object = object,
-                                              data = data,
-                                              opportunity_exploration = opportunity_exploration)
+      purrr::map(
+        data,
+        \(data) {
+          opportunity_exploration <- dplyr::lag(data$relevance, default = 0)
+          ExploringOpportunitiesModel_probability(object = object,
+                                                  data = data,
+                                                  opportunity_exploration = opportunity_exploration)
+        }
+      )
     }
   } else if (exploration_type == "distance") {
     probability <- function(object, data) {
-      distance_lag <- apply_by_distance(data$distance, data$distance, dplyr::lag,
-                                        default = 0)
-      opportunity_exploration <- data$distance - distance_lag
-      ExploringOpportunitiesModel_probability(object = object,
-                                              data = data,
-                                              opportunity_exploration = opportunity_exploration)
+      purrr::map(
+        data,
+        \(data) {
+          distance_lag <- dplyr::lag(data$distance, default = 0)
+          opportunity_exploration <- data$distance - distance_lag
+          ExploringOpportunitiesModel_probability(object = object,
+                                                  data = data,
+                                                  opportunity_exploration = opportunity_exploration)
+        }
+      )
     }
   }
 
@@ -26,18 +34,15 @@ exploring_opportunities_model <- function(diagonal, exploration_type, deterrence
     deterrence_type,
     exponential = function(opportunity_cumsum, opportunity_origin, deterrence, diagonal) {
       if (!diagonal) {
-        opportunity_cumsum <- dibble::broadcast(opportunity_cumsum - opportunity_origin,
-                                                dim_names = c("origin", "destination"))
+        opportunity_cumsum <- opportunity_cumsum - opportunity_origin
       }
       exp(-deterrence * opportunity_cumsum)
     },
     power_law = function(opportunity_cumsum, opportunity_origin, deterrence, diagonal) {
       if (diagonal) {
-        opportunity_cumsum <- dibble::broadcast(dibble::pmax(opportunity_cumsum, opportunity_origin),
-                                                dim_names = c("origin", "destination"))
+        opportunity_cumsum <- pmax(opportunity_cumsum, opportunity_origin)
       }
-      dibble::broadcast((opportunity_origin / opportunity_cumsum) ^ deterrence,
-                        dim_names = c("origin", "destination"))
+      (opportunity_origin / opportunity_cumsum) ^ deterrence
     }
   )
 
@@ -64,14 +69,11 @@ ExploringOpportunitiesModel <- S7::new_class(
 ExploringOpportunitiesModel_probability <- function(object,
                                                     data,
                                                     opportunity_exploration) {
-  opportunity_cumsum_exploration <- apply_by_distance(opportunity_exploration, data$distance, cumsum)
-  opportunity_cumsum_lead_exploration <- apply_by_distance(opportunity_cumsum_exploration, data$distance, dplyr::lead,
-                                                           default = Inf)
+  opportunity_cumsum_exploration <- cumsum(opportunity_exploration)
+  opportunity_cumsum_lead_exploration <- dplyr::lead(opportunity_cumsum_exploration, default = Inf)
 
-  opportunity_origin_exploration <- apply_by_distance(opportunity_exploration, data$distance, dplyr::lead,
-                                                      default = Inf)
-  opportunity_origin_exploration <- dibble::diag(opportunity_origin_exploration,
-                                                 axes = "origin")
+  opportunity_origin_exploration <- dplyr::lead(opportunity_cumsum_exploration, default = Inf)
+  opportunity_origin_exploration <- dplyr::first(opportunity_origin_exploration)
 
   upper_probability_exploration <- object@upper_probability(opportunity_cumsum = opportunity_cumsum_exploration,
                                                             opportunity_origin = opportunity_origin_exploration,
@@ -83,18 +85,16 @@ ExploringOpportunitiesModel_probability <- function(object,
                                                                  diagonal = object@diagonal)
 
   if (!object@diagonal) {
-    dibble::diag(data$relevance) <- 0
+    data$relevance[[1]] <- 0
   }
   opportunity <- data$relevance
-  opportunity_cumsum <- apply_by_distance(data$relevance, data$distance, cumsum)
+  opportunity_cumsum <- cumsum(data$relevance)
 
-  probability <- dibble::broadcast(1 / opportunity_cumsum * (upper_probability_exploration - upper_probability_lead_exploration),
-                                   dim_names = c("origin", "destination"))
+  probability <- 1 / opportunity_cumsum * (upper_probability_exploration - upper_probability_lead_exploration)
+
   if (!object@diagonal) {
-    dibble::diag(probability) <- 0
+    probability[[1]] <- 0
   }
-  probability <- apply_by_distance(probability, data$distance, cumsum,
-                                   decreasing = TRUE)
-  dibble::broadcast(probability * opportunity,
-                    dim_names = c("origin", "destination"))
+  probability <- rev(cumsum(rev(probability)))
+  probability * opportunity
 }

@@ -25,13 +25,16 @@ test_fit_mobility_reg <- function(diagonal,
                           coefficients_relevance = coefficients_relevance,
                           coefficients_deterrence = coefficients_deterrence,
                           ...)
-  predicted <- predict(reg,
-                       new_data = data,
-                       class = "dibble")
-  expect_true(all(dplyr::near(dibble::apply(predicted, "origin", sum), 1, tol = tolerance)))
+  data$probability <- predict(reg,
+                              new_data = data)
+  probability_sum <- dplyr::summarise(data,
+                                      dplyr::across("probability", sum),
+                                      .by = "origin")
+  expect_true(all(dplyr::near(probability_sum$probability, 1, tol = tolerance)))
 
   if (!diagonal) {
-    expect_true(all(dibble::diag(predicted, "origin") == 0))
+    data_diagonal <- dplyr::filter(data, .data$origin == .data$destination)
+    expect_true(all(data_diagonal$probability == 0))
   }
 
   expect_equal(reg@coefficients_relevance, coefficients_relevance,

@@ -15,44 +15,30 @@ MobilityModel <- S7::new_class(
 )
 
 S7::method(predict, MobilityModel) <- function(object, new_data,
-                                               class = c("vector", "dibble")) {
-  class <- rlang::arg_match(class, c("vector", "dibble"))
+                                               class = c("vector", "list"),
+                                               ...) {
+  rlang::check_dots_empty()
 
-  data <- MobilityModel_probability(object, new_data)
+  class <- rlang::arg_match(class, c("vector", "list"))
+
+  probability <- object@probability(object = object,
+                                    data = new_data)
   switch(
     class,
-    vector = MobilityModel_as_vector(data, new_data),
-    dibble = data
+    vector = MobilityModel_as_vector(probability, new_data),
+    list = probability
   )
 }
 
-MobilityModel_as_dibble <- function(data) {
-  if (dibble::is_dibble(data)) {
-    return(data)
+MobilityModel_as_vector <- function(probability, new_data) {
+  if (!all(vctrs::list_sizes(probability) == vctrs::list_sizes(new_data))) {
+    cli::cli_abort("The length of {.arg probability} must be the same as the length of {.arg new_data}.")
   }
-  data <- dibble::dibble_by(data, "origin", "destination")
 
-  dim_names <- dimnames(data)
-  location <- unique(dim_names$origin, dim_names$destination)
-  dim_names <- list(origin = location,
-                    destination = location)
+  probability <- vctrs::list_unchop(probability)
 
-  data <- dibble::broadcast(data, dim_names)
-  tidyr::replace_na(data, list(distance = 0, x = 0))
-}
-
-MobilityModel_probability <- function(object, data) {
-  data <- MobilityModel_as_dibble(data)
-
-  object@probability(object = object,
-                     data = data)
-}
-
-MobilityModel_as_vector <- function(data, new_data) {
-  data <- tibble::as_tibble(data)
-
-  new_data <- new_data[c("origin", "destination")]
-  new_data <- dplyr::left_join(new_data, data,
-                               by = c("origin", "destination"))
-  new_data$.
+  new_data <- vctrs::list_unchop(new_data)
+  new_data$probability <- probability
+  new_data <- dplyr::arrange(new_data, .data$id)
+  new_data$probability
 }
