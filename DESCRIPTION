@@ -24,10 +24,12 @@ Imports:
 Collate: 
     'mobility_model.R'
     'exploring_opportunities_model.R'
-    'gravity_model.R'
     'mobility_model_2.R'
+    'exploring_opportunities_model_2.R'
+    'gravity_model.R'
     'gravity_model_2.R'
     'intervening_opportunities_model.R'
+    'intervening_opportunities_model_2.R'
     'mobilityreg-package.R'
     'mobility_reg.R'
     'mobility_reg_2.R'
